@@ -47,7 +47,7 @@ namespace TD.WebApi.Logic
             return svalor;
         }
 
-        public int RetornarInt(bool? valor)
+        public int RetornarInt(bool valor)
         {
             int svalor = 0;
             if (valor == true)

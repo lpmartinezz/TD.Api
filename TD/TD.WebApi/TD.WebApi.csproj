@@ -27,5 +27,10 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="5.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\TD.WebApi.Entities\TD.WebApi.Entities.csproj" />
+    <ProjectReference Include="..\TD.WebApi.Logic\TD.WebApi.Logic.csproj" />
+  </ItemGroup>
+
 
 </Project>
