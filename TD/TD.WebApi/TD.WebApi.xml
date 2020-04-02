@@ -4,5 +4,83 @@
         <name>TD.WebApi</name>
     </assembly>
     <members>
+        <member name="M:TD.WebApi.Controllers.FormulariosController.Autentificacion(TD.WebApi.Entities.AutentificacionRequest)">
+            <summary>
+            Autentificacion de Usuario
+            </summary>
+            <response code="404"></response>
+            <returns>Retorna los datos de la autentificacion</returns>
+        </member>
+        <member name="M:TD.WebApi.Controllers.FormulariosController.GetAllFormularios(TD.WebApi.Entities.RequestForm)">
+            <summary>
+            Obtener todos los formularios
+            </summary>
+            <response code="404"></response>
+            <returns>Retorna los datos de todos los formularios</returns>
+        </member>
+        <member name="M:TD.WebApi.Controllers.FormulariosController.GetOneForm(TD.WebApi.Entities.RequestOneForm)">
+            <summary>
+            Obtener infor del formulario
+            </summary>
+            <response code="404"></response>
+            <returns>Retorna información del formulario</returns>
+        </member>
+        <member name="M:TD.WebApi.Controllers.FormulariosController.InsertForm(TD.WebApi.Entities.ResultForm)">
+            <summary>
+            Insertar formulario
+            </summary>
+            <response code="404"></response>
+            <returns>Retorna información de la insercion del formulario</returns>
+        </member>
+        <member name="M:TD.WebApi.Controllers.FormulariosController.UpdateForm(TD.WebApi.Entities.ResultForm)">
+            <summary>
+            Actualizar formulario
+            </summary>
+            <response code="404"></response>
+            <returns>Retorna información de la actualizacion del formulario</returns>
+        </member>
+        <member name="M:TD.WebApi.Controllers.FormulariosController.DeleteForm(TD.WebApi.Entities.RequestOneForm)">
+            <summary>
+            Eliminar formulario
+            </summary>
+            <response code="404"></response>
+            <returns>Retorna información de la eliminacion del formulario</returns>
+        </member>
+        <member name="M:TD.WebApi.Controllers.FormulariosController.GetAllBaseDatos(TD.WebApi.Entities.RequestForm)">
+            <summary>
+            Obtener todos las Base de Datos
+            </summary>
+            <response code="404"></response>
+            <returns>Retorna los datos de todas las Base de Datos</returns>
+        </member>
+        <member name="M:TD.WebApi.Controllers.FormulariosController.GetOneBaseDatos(TD.WebApi.Entities.RequestBaseDatosOne)">
+            <summary>
+            Obtener infor de la Base de Datos
+            </summary>
+            <response code="404"></response>
+            <returns>Retorna información de la Base de datos</returns>
+        </member>
+        <member name="M:TD.WebApi.Controllers.FormulariosController.SendBaseDatos(TD.WebApi.Entities.SendBaseDatoRequest)">
+            <summary>
+            Enviar Base de Datos
+            </summary>
+            <response code="404"></response>
+            <returns>Retorna información dl envio de la base de datos</returns>
+            
+        </member>
+        <member name="M:TD.WebApi.Controllers.FormulariosController.SendInvitation(TD.WebApi.Entities.SendInvitationRequest)">
+            <summary>
+            Enviar Invitación
+            </summary>
+            <response code="404"></response>
+            <returns>Retorna información del envio de las invitaciones</returns>
+        </member>
+        <member name="M:TD.WebApi.Controllers.FormulariosController.SaveFormResponses(TD.WebApi.Entities.SaveFormRequest)">
+            <summary>
+            Guardar Formulario
+            </summary>
+            <response code="404"></response>
+            <returns>Retorna información de la insercion del formulario</returns>
+        </member>
     </members>
 </doc>

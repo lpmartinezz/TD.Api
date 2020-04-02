@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
@@ -725,7 +726,9 @@ namespace TD.WebApi.Controllers
                          }).FirstOrDefault().rows;
 
                 string jsonStringR = sRows;
-                baseResponse.result.rows = JsonConvert.DeserializeObject<IEnumerable<RowRequest>>(jsonStringR);
+                //baseResponse.result.rows = JsonConvert.DeserializeObject<IEnumerable<RowRequest>>(jsonStringR);
+
+                baseResponse.result.rows = JsonConvert.DeserializeObject<IEnumerable<object>>(jsonStringR);
 
                 baseResponse.success = true;
                 baseResponse.code = "0000";
@@ -789,8 +792,27 @@ namespace TD.WebApi.Controllers
                 _context.UserDbdefinition.Add(Headerinsert);
                 await _context.SaveChangesAsync();
 
+                string SetJsonR = string.Empty;
+                //SetJsonR = "[";
+                //foreach (RowRequest item in request.rows)
+                //{
+                //    SetJsonR += "{";
+                //    foreach (var prop in item.GetType().GetProperties())
+                //    {
+                //        var ValorAtributo = prop.GetValue(item, null);
+                //        if (ValorAtributo != null)
+                //        {
+                //            SetJsonR = SetJsonR + "'" + prop.Name + "':'" + ValorAtributo + "',";
+                //        }
+                //    }
+                //    SetJsonR = SetJsonR.Substring(0, SetJsonR.Length - 1);
+                //    SetJsonR += "},";
+                //}
+                //SetJsonR = SetJsonR.Substring(0, SetJsonR.Length - 1);
+                //SetJsonR += "]";
+
                 //insertar Rows
-                string SetJsonR = JsonConvert.SerializeObject(request.rows);
+                SetJsonR = JsonConvert.SerializeObject(request.rows);
                 UserDbrows Rowinsert = new UserDbrows
                 {
                     IduserDb = Headerinsert.IduserDb,
@@ -1099,10 +1121,17 @@ namespace TD.WebApi.Controllers
         private string TipoControlIdValor(long idTipoControl)
         {
             string id = string.Empty;
-            var TipoControl = _context.Configuracion.FirstOrDefault(x => x.Grupo.Equals("IDTipoControl") && x.Idconfiguracion.Equals(idTipoControl));
-            if (TipoControl != null)
+            try
             {
-                id = TipoControl.Valor;
+                var TipoControl = _context.Configuracion.FirstOrDefault(x => x.Grupo.Equals("IDTipoControl") && x.Idconfiguracion.Equals(idTipoControl));
+                if (TipoControl != null)
+                {
+                    id = TipoControl.Valor;
+                }
+            }
+            catch 
+            {
+                id = "0";
             }
             return id;
         }

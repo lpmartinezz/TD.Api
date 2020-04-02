@@ -44,6 +44,7 @@ namespace TD.WebApi
                 .AddSingleton<ILoggerFactory, LoggerFactory>()
                 .AddSingleton(typeof(ILogger<>), typeof(Logger<>));
             services.AddControllers();
+            services.AddMvc().AddNewtonsoftJson();
             ConfigureSwagger(services);
         }
 
