@@ -646,7 +646,7 @@ namespace TD.WebApi.Controllers
                                        name = F.Descripcion,
                                        idusuario = F.Idusuario.ToString(),
                                        idempresa = F.Idempresa.ToString(),
-                                       fecha_upload = F.Registro.ToLongDateString(),
+                                       fecha_upload = F.Registro.ToShortDateString() + " " + F.Registro.ToLongTimeString(),
                                        estado = metodos.RetornarInt(Convert.ToBoolean(F.Activo))
                                    };
                 if (resultado.result != null)
@@ -775,6 +775,9 @@ namespace TD.WebApi.Controllers
             };
             try
             {
+                string sNombreBD = DateTime.Now.Year.ToString() + DateTime.Now.Month.ToString() + DateTime.Now.Day.ToString() +
+                                   DateTime.Now.Hour.ToString() + DateTime.Now.Minute.ToString() + DateTime.Now.Second.ToString();
+                
                 //insertar Headers
                 string SetJsonH = JsonConvert.SerializeObject(request.Header);
 
@@ -782,7 +785,7 @@ namespace TD.WebApi.Controllers
                 {
                     Idempresa = Convert.ToInt64(request.idEmpresa),
                     Idusuario = Convert.ToInt64(request.idUsuario),
-                    Descripcion = "bd_" + DateTime.Now.ToShortDateString(),
+                    Descripcion = "bd_" + sNombreBD,
                     Header = SetJsonH,
                     EsPublicada = false,
                     Usuario = Convert.ToInt64(request.idUsuario),
@@ -793,24 +796,6 @@ namespace TD.WebApi.Controllers
                 await _context.SaveChangesAsync();
 
                 string SetJsonR = string.Empty;
-                //SetJsonR = "[";
-                //foreach (RowRequest item in request.rows)
-                //{
-                //    SetJsonR += "{";
-                //    foreach (var prop in item.GetType().GetProperties())
-                //    {
-                //        var ValorAtributo = prop.GetValue(item, null);
-                //        if (ValorAtributo != null)
-                //        {
-                //            SetJsonR = SetJsonR + "'" + prop.Name + "':'" + ValorAtributo + "',";
-                //        }
-                //    }
-                //    SetJsonR = SetJsonR.Substring(0, SetJsonR.Length - 1);
-                //    SetJsonR += "},";
-                //}
-                //SetJsonR = SetJsonR.Substring(0, SetJsonR.Length - 1);
-                //SetJsonR += "]";
-
                 //insertar Rows
                 SetJsonR = JsonConvert.SerializeObject(request.rows);
                 UserDbrows Rowinsert = new UserDbrows
@@ -908,7 +893,21 @@ namespace TD.WebApi.Controllers
                         }
                         else
                         {
+                            UrlQS urlQS = new UrlQS();
+                            string sHeader = string.Empty;
                             string sRows = string.Empty;
+
+                            sHeader = (from F in _context.UserDbdefinition
+                                       where F.IduserDb.Equals(Convert.ToInt64(request.idBaseDatos))
+                                       select new
+                                       {
+                                           header = F.Header
+                                       }).FirstOrDefault().header;
+                            string jsonStringH = sHeader;
+                            IEnumerable<HeaderRequest> headerRequests = JsonConvert.DeserializeObject<IEnumerable<HeaderRequest>>(jsonStringH);
+
+                            
+
                             sRows = (from F in _context.UserDbrows
                                      where F.IduserDb.Equals(Convert.ToInt64(request.idBaseDatos))
                                      select new
@@ -917,6 +916,7 @@ namespace TD.WebApi.Controllers
                                      }).FirstOrDefault().rows;
 
                             string jsonStringR = sRows;
+                            //List<RowRequest> rowRequests = JsonConvert.DeserializeObject<List<RowRequest>>(jsonStringR);
                             IEnumerable<RowRequest> rowRequests = JsonConvert.DeserializeObject<IEnumerable<RowRequest>>(jsonStringR);
 
                             //Guardar FormInvitation
@@ -936,27 +936,56 @@ namespace TD.WebApi.Controllers
                             _context.FormInvitation.Add(formInvitation);
                             await _context.SaveChangesAsync();
 
-                            UrlQS urlQS = new UrlQS();
-
+                            //rowRequests
+                            int indexH = 0;
                             foreach (var itemR in rowRequests)
                             {
-                                FormInvitationDetail formInvitationDetail = new FormInvitationDetail
+                                FormInvitationDetail formInvitationDetail = new FormInvitationDetail();
+                                formInvitationDetail.IdformInvition = formInvitation.IdformInvition;
+                                formInvitationDetail.IsAnswered = false;
+                                foreach (var itemH in headerRequests) 
                                 {
-                                    IdformInvition = formInvitation.IdformInvition,
-                                    IsAnswered = true,
-                                    Name = itemR.col1,
-                                    LastName = itemR.col2,
-                                    Mail = itemR.col4,
-                                    Idcard = itemR.col5.ToString(),
-                                    Mobile = itemR.col6.ToString(),
-                                    Urlqs = urlQS.GenerarQS(itemR.col1, itemR.col2, itemR.col4, itemR.col5.ToString(), itemR.col6.ToString()),
-                                    Usuario = Convert.ToInt64(request.idUsuario),
-                                    Activo = true,
-                                    Registro = DateTime.Now
-
-                                };
+                                    int colrow = 0;
+                                    if (itemH.typeColumn != "0")
+                                    {
+                                        foreach (var prop in itemR.GetType().GetProperties())
+                                        {
+                                            if (indexH == colrow)
+                                            {
+                                                var ValorAtributo = prop.GetValue(itemR, null);
+                                                if (ValorAtributo != null)
+                                                {
+                                                    switch (itemH.typeColumn)
+                                                    {
+                                                        case "1":
+                                                            formInvitationDetail.Name = ValorAtributo.ToString();
+                                                            break;
+                                                        case "2":
+                                                            formInvitationDetail.Mail = ValorAtributo.ToString();
+                                                            break;
+                                                        case "3":
+                                                            formInvitationDetail.Idcard = ValorAtributo.ToString();
+                                                            break;
+                                                        case "4":
+                                                            formInvitationDetail.Mobile = ValorAtributo.ToString();
+                                                            break;
+                                                    }
+                                                }
+                                                //break;
+                                            }
+                                            colrow += 1;
+                                            //break;
+                                        }
+                                    }
+                                    indexH += 1;
+                                }
+                                formInvitationDetail.Urlqs = urlQS.GenerarQS(formInvitationDetail.Name, "", formInvitationDetail.Mail, formInvitationDetail.Idcard, formInvitationDetail.Mobile);
+                                formInvitationDetail.Usuario = Convert.ToInt64(request.idUsuario);
+                                formInvitationDetail.Activo = true;
+                                formInvitationDetail.Registro = DateTime.Now;
                                 _context.FormInvitationDetail.Add(formInvitationDetail);
                                 await _context.SaveChangesAsync();
+                                indexH = 0;
                             }
                             baseResponse.result.data = "0";
                             baseResponse.result.mensaje = "Se envió correctamente";
