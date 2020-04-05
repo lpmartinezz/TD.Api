@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using TD.WebApi.Entities;
 
 namespace TD.WebApi.Logic
 {
@@ -76,6 +79,65 @@ namespace TD.WebApi.Logic
                 }
             }
             return bvalor;
+        }
+
+        public Boolean email_bien_escrito(String email)
+        {
+            String expresion;
+            expresion = "\\w+([-+.']\\w+)*@\\w+([-.]\\w+)*\\.\\w+([-.]\\w+)*";
+            if (Regex.IsMatch(email, expresion))
+            {
+                if (Regex.Replace(email, expresion, String.Empty).Length == 0)
+                {
+                    
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public void ContadorEmails(IEnumerable<RowRequest> rowRequests, IEnumerable<HeaderRequest> headerRequests, ref int contEmail)
+        {
+            int indexH = 0;
+            foreach (var itemR in rowRequests)
+            {
+                foreach (var itemH in headerRequests)
+                {
+                    int colrow = 0;
+                    if (itemH.typeColumn != "0")
+                    {
+                        foreach (var prop in itemR.GetType().GetProperties())
+                        {
+                            if (indexH == colrow)
+                            {
+                                var ValorAtributo = prop.GetValue(itemR, null);
+                                if (ValorAtributo != null)
+                                {
+                                    switch (itemH.typeColumn)
+                                    {
+                                        case "2":
+                                            if (email_bien_escrito(ValorAtributo.ToString()))
+                                            {
+                                                contEmail += 1;
+                                            }
+                                            break;
+                                    }
+                                }
+                            }
+                            colrow += 1;
+                        }
+                    }
+                    indexH += 1;
+                }
+                indexH = 0;
+            }
         }
 
     }

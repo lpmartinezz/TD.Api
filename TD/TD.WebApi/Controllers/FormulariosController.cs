@@ -906,8 +906,6 @@ namespace TD.WebApi.Controllers
                             string jsonStringH = sHeader;
                             IEnumerable<HeaderRequest> headerRequests = JsonConvert.DeserializeObject<IEnumerable<HeaderRequest>>(jsonStringH);
 
-                            
-
                             sRows = (from F in _context.UserDbrows
                                      where F.IduserDb.Equals(Convert.ToInt64(request.idBaseDatos))
                                      select new
@@ -919,15 +917,18 @@ namespace TD.WebApi.Controllers
                             //List<RowRequest> rowRequests = JsonConvert.DeserializeObject<List<RowRequest>>(jsonStringR);
                             IEnumerable<RowRequest> rowRequests = JsonConvert.DeserializeObject<IEnumerable<RowRequest>>(jsonStringR);
 
+                            int contarEmails = 0;
+                            metodos.ContadorEmails(rowRequests, headerRequests, ref contarEmails);
+
                             //Guardar FormInvitation
                             FormInvitation formInvitation = new FormInvitation
                             {
                                 Idformulario = Convert.ToInt64(request.idForm),
                                 IduserDb = Convert.ToInt64(request.idBaseDatos),
                                 Quniverse = rowRequests.Count(),
-                                QsendInvitation = 0,
+                                QsendInvitation = contarEmails,
                                 Qresponse = 0,
-                                Qleft = 0,
+                                Qleft = contarEmails,
                                 IsOnLine = false,
                                 Usuario = Convert.ToInt64(request.idUsuario),
                                 Activo = true,
@@ -1053,11 +1054,34 @@ namespace TD.WebApi.Controllers
                         Respuesta1 = item.value,
                         Usuario = Convert.ToInt64(request.idusuario),
                         Activo = true,
+                        Urlqs = request.token,
                         Registro = DateTime.Now
                     };
                     _context.Respuesta.Add(respuesta);
                     await _context.SaveChangesAsync();
                 }
+
+                //actualizar FormInvitation
+                var formInvAct = (from c in _context.FormInvitation
+                                  join d in _context.FormInvitationDetail on c.IdformInvition equals d.IdformInvition into cdForInv
+                                  from cdfi in cdForInv.DefaultIfEmpty()
+                                  where c.Idformulario.Equals(Convert.ToInt64(request.idform))
+                                     && c.Activo.Equals(true)
+                                     && cdfi.Urlqs.Equals(request.token)
+                                  select new
+                                  {
+                                      IdformInvition = c.IdformInvition
+                                  }).LastOrDefault();
+
+                if (formInvAct != null)
+                {
+                    FormInvitation formInvitation = await _context.FormInvitation.FindAsync(formInvAct.IdformInvition);
+                    formInvitation.Qresponse += 1;
+                    formInvitation.Qleft -= 1;
+                    _context.FormInvitation.Update(formInvitation);
+                    await _context.SaveChangesAsync();
+                }
+
                 baseResponse.result.data = "0";
                 baseResponse.result.mensaje = "Se registro correctamente las respuesta.";
 
@@ -1089,6 +1113,71 @@ namespace TD.WebApi.Controllers
                 baseResponse.success = false;
                 baseResponse.code = "-1";
                 baseResponse.mensaje = "Metodo SaveFormResponses Error";
+            }
+            return Ok(baseResponse);
+        }
+
+        /// <summary>
+        /// Obtener formulario de Invitacion
+        /// </summary>
+        /// <response code="404"></response>
+        /// <returns>Retorna información del formulario de invitacion</returns>
+        [HttpPost("GetFormByToken")]
+        [ProducesResponseType(typeof(BaseResponse<UserInvitation>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<BaseResponse<UserInvitation>>> GetFormByToken(RequestInvitation request)
+        {
+            BaseResponse<UserInvitation> baseResponse = new BaseResponse<UserInvitation>
+            {
+                result = new UserInvitation()
+            };
+            try
+            {
+                var invitado = _context.FormInvitationDetail.FirstOrDefault(x => x.Urlqs.Equals(request.token));
+                var invitadofom = _context.FormInvitation.FirstOrDefault(x => x.IdformInvition.Equals(invitado.IdformInvition));
+
+                if (invitado != null)
+                {
+                    baseResponse.result.nombre = invitado.Name;
+                    baseResponse.result.email = invitado.Mail;
+                    baseResponse.result.dni = invitado.Idcard;
+                    baseResponse.result.celular = invitado.Mobile;
+                    
+                    baseResponse.result.form = await FormByInvitationId(invitadofom.Idformulario);
+
+                    baseResponse.result.form.controls = await ControlsByFormId(invitadofom.Idformulario);
+
+                    baseResponse.success = true;
+                    baseResponse.code = "0000";
+                    baseResponse.mensaje = "Metodo GetFormByToken";
+                }
+                else
+                {
+                    baseResponse.success = false;
+                    baseResponse.code = "-1";
+                    baseResponse.mensaje = "No se encontró registros";
+                }
+            }
+            catch (Exception ex)
+            {
+                ////insertar EventLog
+                //UserEventLog userEventLog = new UserEventLog
+                //{
+                //    //IdeventType = 3, //Error
+                //    //Idsesion = _context.UserSesion.Where(x => x.Idusuario.Equals(Convert.ToInt64(request.idUsuario)) && x.Activo.Equals(true)).FirstOrDefault().Idsesion,
+                //    //LastValue = string.Empty,
+                //    //TextMessage = "Metodo GetOneFormularios Error:" + ex.Message,
+                //    //UserTableName = "GetAllFormularios",
+                //    //ValuePk = 0,
+                //    //Usuario = Convert.ToInt64(request.idUsuario),
+                //    Activo = true,
+                //    Registro = DateTime.Now
+                //};
+                //_context.UserEventLog.Add(userEventLog);
+                //await _context.SaveChangesAsync();
+
+                baseResponse.success = false;
+                baseResponse.code = "-1";
+                baseResponse.mensaje = "Error al Cargar Formularios:" + ex.Message;
             }
             return Ok(baseResponse);
         }
@@ -1145,6 +1234,24 @@ namespace TD.WebApi.Controllers
                               controlid = F.Htmlname
                           };
             return control;
+        }
+
+        private async Task<ResultForm> FormByInvitationId(long idform)
+        {
+            var Vforms = await _context.Formulario.Where(x => x.Idformulario.Equals(idform) && x.Activo.Equals(true)).ToListAsync();
+            var forms = (from F in Vforms
+                         select new ResultForm
+                           {
+                               idform = F.Idformulario.ToString(),
+                               titulo = F.Titulo,
+                               fecha_vigencia = F.FechaVigencia.ToShortDateString(),
+                               comentario = F.Descripcion,
+                               estado = metodos.RetornarString(Convert.ToBoolean(F.Activo)),
+                               idusuario = F.Idusuario.ToString(),
+                               idempresa = F.Idempresa.ToString(),
+                               //controls = await ControlsByFormId(idform)
+                           }).FirstOrDefault();
+            return forms;
         }
 
         private string TipoControlIdValor(long idTipoControl)
@@ -1280,5 +1387,7 @@ namespace TD.WebApi.Controllers
         }
 
         #endregion
+
     }
+
 }

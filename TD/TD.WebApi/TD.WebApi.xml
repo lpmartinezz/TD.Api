@@ -82,5 +82,12 @@
             <response code="404"></response>
             <returns>Retorna información de la insercion del formulario</returns>
         </member>
+        <member name="M:TD.WebApi.Controllers.FormulariosController.GetFormByToken(TD.WebApi.Entities.RequestInvitation)">
+            <summary>
+            Obtener formulario de Invitacion
+            </summary>
+            <response code="404"></response>
+            <returns>Retorna información del formulario de invitacion</returns>
+        </member>
     </members>
 </doc>
